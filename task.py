@@ -9,16 +9,24 @@ api = Api(app)
 conn = sqlite3.connect('test.db',check_same_thread=False)
 cursor = conn.cursor()
 with conn:
-    cursor.execute("CREATE TABLE IF NOT EXISTS messages (message_id INTEGER PRIMARY KEY, data TEXT)")
+    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS messages (
+                                message_id INTEGER PRIMARY KEY,
+                                created_at TIMESTAMP DEFAULT current_timestamp,
+                                data TEXT
+                                )"""
+                    )
 
 def abort_if_message_doesnt_exist(message_id):
-    cursor.execute("SELECT message_id FRom messages where message_id=:ms_id",{"ms_id":message_id})
+    cursor.execute("SELECT message_id FROM messages WHERE message_id=:ms_id",{"ms_id":message_id})
     mssg = cursor.fetchone()
     if not mssg:
         abort(404, message="Message {} doesn't exist".format(message_id))
 
 parser = reqparse.RequestParser()
 parser.add_argument('data')
+parser.add_argument('limit')
+parser.add_argument('offset')
 
 
 # Message
@@ -26,7 +34,7 @@ parser.add_argument('data')
 class Message(Resource):
     def get(self, message_id):
         abort_if_message_doesnt_exist(message_id)
-        cursor.execute("SELECT * FROM messages where message_id=:ms_id",{"ms_id":message_id})
+        cursor.execute("SELECT message_id , data FROM messages where message_id=:ms_id",{"ms_id":message_id})
         mssg = cursor.fetchall()
         return dict(mssg)
 
@@ -48,7 +56,20 @@ class Message(Resource):
 # shows a list of all messages, and POST to add new datas
 class MessageList(Resource):
     def get(self):
-        cursor.execute("SELECT * FROM messages")
+        OFT = 0
+        LMT = 20
+        args = parser.parse_args()
+        if args['offset'] is not None:
+            OFT = args['offset']
+        if args['limit'] is not None:
+            LMT = args['limit']
+        cursor.execute("""
+                        SELECT message_id , data
+                        FROM messages
+                        ORDER BY created_at DESC
+                        LIMIT :lmt
+                        OFFSET :oft """,
+                        {'lmt':LMT, 'oft':OFT})
         mssg = cursor.fetchall()
         return dict(mssg)
 
@@ -56,7 +77,7 @@ class MessageList(Resource):
         args = parser.parse_args()
         with conn:
             cursor.execute("INSERT INTO messages (data) VALUES (:data)",{'data':args['data']})
-        cursor.execute("SELECT * FROM messages where message_id=last_insert_rowid()")
+        cursor.execute("SELECT message_id , data FROM messages where message_id=last_insert_rowid()")
         mssg = cursor.fetchall()
         return dict(mssg), 201
 
