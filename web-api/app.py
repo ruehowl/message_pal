@@ -1,10 +1,11 @@
 from flask import Flask
 from flask_restful import Api, Resource, reqparse, abort
+from flask_cors import CORS
 import sqlite3
 
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
-
 
 conn = sqlite3.connect('data.db',check_same_thread=False)
 cursor = conn.cursor()
@@ -99,4 +100,4 @@ api.add_resource(Message, '/api/messages/<message_id>')
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True)
