@@ -76,7 +76,10 @@ class MessageList(Resource):
                         OFFSET :oft """,
                         {'lmt':LMT, 'oft':OFT})
         mssg = cursor.fetchall()
-        return dict(mssg)
+        lst = []
+        for i in mssg:
+            lst.append({ 'mesgId': i[0], 'message' : i[1]})
+        return { 'data' : lst}
 
     def post(self):
         args = parser.parse_args()
@@ -84,7 +87,9 @@ class MessageList(Resource):
             cursor.execute("INSERT INTO messages (data) VALUES (:data)",{'data':args['data']})
         cursor.execute("SELECT message_id , data FROM messages where message_id=last_insert_rowid()")
         mssg = cursor.fetchall()
-        return dict(mssg), 201
+        mesgId = mssg[0][0]
+        data = mssg[0][1]
+        return { 'messageId' : mesgId , 'message' : data}, 201
 
 ##
 ## setup the Api resource routing.
@@ -94,4 +99,4 @@ api.add_resource(Message, '/api/messages/<message_id>')
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)
