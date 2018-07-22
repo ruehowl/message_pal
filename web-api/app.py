@@ -56,7 +56,10 @@ class Message(Resource):
         data = args['data']
         with conn:
             cursor.execute("UPDATE messages SET data=:data WHERE message_id=:ms_id",{"ms_id":message_id, 'data':data})
-        return {'data': data}, 201
+        return {'data': {
+			'messageId' : message_id,
+			'message' : data}
+		}, 201
 
 
 # MessageList
