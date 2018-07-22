@@ -53,7 +53,7 @@ class Message(Resource):
 
 
 # MessageList
-# shows a list of all messages, and POST to add new datas
+# shows a list of all messages, and POST to add new data
 class MessageList(Resource):
     def get(self):
         OFT = 0
@@ -84,8 +84,8 @@ class MessageList(Resource):
 ##
 ## setup the Api resource routing.
 ##
-api.add_resource(MessageList, '/messages')
-api.add_resource(Message, '/messages/<message_id>')
+api.add_resource(MessageList, '/api/messages')
+api.add_resource(Message, '/api/messages/<message_id>')
 
 
 if __name__ == '__main__':
