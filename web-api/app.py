@@ -29,8 +29,7 @@ def abort_if_message_doesnt_exist(message_id):
 
 parser = reqparse.RequestParser()
 parser.add_argument('data')
-parser.add_argument('limit')
-parser.add_argument('offset')
+parser.add_argument('page')
 
 
 # Message
@@ -63,12 +62,11 @@ class Message(Resource):
 class MessageList(Resource):
     def get(self):
         OFT = 0
-        LMT = 20
+        LMT = 10
         args = parser.parse_args()
-        if args['offset'] is not None:
-            OFT = args['offset']
-        if args['limit'] is not None:
-            LMT = args['limit']
+        if args['page'] is not None:
+            OFT = LMT * int(args['page'])
+	print 'offset', OFT
         cursor.execute("""
                         SELECT message_id , data
                         FROM messages
@@ -79,7 +77,7 @@ class MessageList(Resource):
         mssg = cursor.fetchall()
         lst = []
         for i in mssg:
-            lst.append({ 'mesgId': i[0], 'message' : i[1]})
+            lst.append({ 'messageId': i[0], 'message' : i[1]})
         return { 'data' : lst}
 
     def post(self):
