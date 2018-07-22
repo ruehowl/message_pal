@@ -71,19 +71,20 @@ class MessageList(Resource):
         args = parser.parse_args()
         if args['page'] is not None:
             OFT = LMT * int(args['page'])
-	print 'offset', OFT
         cursor.execute("""
-                        SELECT message_id , data
+                        SELECT message_id , data , (SELECT COUNT(*) FROM messages) count
                         FROM messages
                         ORDER BY created_at DESC
                         LIMIT :lmt
                         OFFSET :oft """,
                         {'lmt':LMT, 'oft':OFT})
         mssg = cursor.fetchall()
+	count = mssg[0][2] if mssg != []  else 0
+	print count, 'count'
         lst = []
         for i in mssg:
             lst.append({ 'messageId': i[0], 'message' : i[1]})
-        return { 'data' : lst}
+        return { 'data' : lst, 'count' : count}
 
     def post(self):
         args = parser.parse_args()
