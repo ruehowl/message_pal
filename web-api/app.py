@@ -16,6 +16,9 @@ with conn:
                                 data TEXT
                                 )"""
                     )
+# returns True if palindrome
+def isPal(message):
+    return message == message[::-1]
 
 def abort_if_message_doesnt_exist(message_id):
     cursor.execute("SELECT message_id FROM messages WHERE message_id=:ms_id",{"ms_id":message_id})
@@ -36,7 +39,9 @@ class Message(Resource):
         abort_if_message_doesnt_exist(message_id)
         cursor.execute("SELECT message_id , data FROM messages where message_id=:ms_id",{"ms_id":message_id})
         mssg = cursor.fetchall()
-        return dict(mssg)
+        result = dict(mssg)
+        result['isPalindrome'] = isPal(str(mssg[0][1]))
+        return result ,200
 
     def delete(self, message_id):
         abort_if_message_doesnt_exist(message_id)
