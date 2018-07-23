@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width = device-width, initial-scale = 1">
+  <title>Pilindrome checker</title>
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+    crossorigin="anonymous">
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  <!-- Include all compiled plugins (below), or include individual files as needed -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+  <div class="container">
+    <h1> Message Palindrome </h1>
+    <div class="col-md-4">
+      <form role="form">
+        <div class="form-group">
+          <label for="name">Message</label>
+          <input type="text" required="required" class="form-control" id="message" placeholder="Enter the message">
+        </div>
+        <button type="button" class="btn btn-default" id="btnSubmit">Submit</button>
+      </form>
+    </div>
+    <div class='col-md-8'>
+      <table class='table table-striped table-hover' id="messageList">
+        <thead>
+          <th>#</th>
+          <th>Message</th>
+          <th></th>
+          <th></th>
+        </thead>
+        <tbody>
+
+        </tbody>
+      </table>
+
+      <div class="col-md-12">
+        <nav aria-label="...">
+          <ul class="pager">
+            <li id='pageOld' data-page='1' class='pagination'>
+              <a href="javascript:void(0)">
+                <span aria-hidden="true"></span>&larr;</span> Older</a>
+            </li>
+            <li id='pageNew' data-page='-1' class="disabled pagination">
+              <a href="javascript:void(0)">Newer
+                <span aria-hidden="true">&rarr;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" tabindex="-1" role="dialog" id="viewModal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="col-md-12">
+            <div class="col-md-6">
+              <p>Message : </p>
+            </div>
+            <div class="col-md-6" id='viewMessage'>
+              <p></p>
+            </div>
+            <div class="col-md-6">
+              <p>Details :</p>
+            </div>
+            <div class="col-md-6" id='viewDetails'>
+              <p></p>
+            </div>
+          </div>
+        </div>
+        <div class="clearfix"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" tabindex="-1" role="dialog" id="editModal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form role="form">
+            <div class="form-group">
+              <label for="name">Message</label>
+              <input type="hidden" id='messageId'>
+              <input type="text" required='required' class="form-control" id="messageUpdate" placeholder="Enter the message">
+            </div>
+          </form>
+        </div>
+        <div class="clearfix"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="btnUpdate">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    const baseURL = 'http://eggpi.tk:5000/api/'; 
+    // const baseURL = 'http://localhost:5000/api/';
+    const recordsPerPage = 10;
+
+    var currentPage = 0;
+
+    $('#btnSubmit').click(function (e) {
+      var message = $('#message').val();
+      if (validateMessage(message))
+        sendMessage(message);
+    })
+    $('#btnUpdate').click(function (e) {
+      var message = $('#messageUpdate').val();
+      var id = $('#messageId').val();
+      if (validateMessage(message))
+        updateMessage(message,id);
+    })
+
+    $('.pagination').click(function (e) {
+      var page = $(this).data('page');
+      if (!$(this).hasClass('disabled')) {
+        loadList(page);
+      }
+    });
+
+    $('#messageList tbody').on('click', '.delete', function (e) {
+      deleteMessage($(this).data('id'));
+    });
+
+    $('#messageList tbody').on('click', '.view', function (e) {
+      getMessage($(this).data('id'));
+    });
+
+    $('#messageList tbody').on('click', '.edit', function (e) {
+      getMessageForUpdate($(this).data('id'));
+    });
+
+    $(function () {
+      loadList(currentPage);
+    });
+
+    function sendMessage(msg) {
+      $.ajax(baseURL + 'messages', {
+        data: 'data=' + msg,
+        method: 'POST',
+        success: function (d, e) {
+          $('#message').val('');
+          loadList(currentPage);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+   
+    function updateMessage(msg,id) {
+      $.ajax(baseURL + 'messages/'+id, {
+        data: 'data=' + msg,
+        method: 'PUT',
+        success: function (d, e) {
+          $('#messageUpdate').val('');
+          $('#editModal').modal('hide');
+          loadList(currentPage);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+    function btnUpdate(msg) {
+      $.ajax(baseURL + 'messages', {
+        data: 'data=' + msg,
+        method: 'POST',
+        success: function (d, e) {
+          $('#message').val('');
+          loadList(currentPage);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+
+    function loadList(page) {
+      $.ajax(baseURL + 'messages', {
+        data: 'page=' + page,
+        method: 'GET',
+        success: function (d, e) {
+          loadTable(d.data);
+          currentPage = page;
+          updatePagination(d.count);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+
+    function deleteMessage(messageId) {
+      $.ajax(baseURL + 'messages/' + messageId, {
+        method: 'DELETE',
+        success: function (d, e) {
+          loadList(currentPage);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+
+    function getMessage(messageId) {
+      $.ajax(baseURL + 'messages/' + messageId, {
+        method: 'GET',
+        success: function (d, e) {
+          loadMessage(d.data);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+    function getMessageForUpdate(messageId) {
+      $.ajax(baseURL + 'messages/' + messageId, {
+        method: 'GET',
+        success: function (d, e) {
+          loadMessageForUpdate(d.data);
+        },
+        error: function (e) {
+          console.log(e);
+        }
+      });
+    }
+
+    function loadTable(messages) {
+      var str = '';
+      messages.forEach(function (msg) {
+        str += getAppendString(msg);
+      });
+
+      $('#messageList tbody').html(str);
+    }
+
+    function loadMessage(msg) {
+      $('#viewMessage p').text(msg.message);
+      if (msg.isPalindrome)
+        $('#viewDetails p').text('Message is palindrome')
+      else
+        $('#viewDetails p').text('Message is  not palindrome')
+
+      $('#viewModal').modal('show');
+    }
+    function loadMessageForUpdate(msg) {
+      $('#messageUpdate').val(msg.message);
+      $('#messageId').val(msg.messageId);
+      $('#editModal').modal('show');
+    }
+
+    function getAppendString(msg) {
+      return "<tr>" +
+        "<td>" + msg.messageId + "</td>" +
+        "<td><a class='view' href='#' data-id='" + msg.messageId + "'>" + msg.message + "</a></td>" +
+        "<td><a class='edit' data-id='" + msg.messageId + "' href='#' ><span class='glyphicon glyphicon-pencil' ></span></a></td>" +
+        "<td><a class='delete' data-id='" + msg.messageId + "' href='#' ><span class='glyphicon glyphicon-trash' ></span></a></td>" +
+        "</tr>";
+    }
+
+    function updatePagination(totalRecords) {
+      $('#pageOld').data('page', currentPage + 1)
+      $('#pageNew').data('page', currentPage - 1)
+
+      if (currentPage == 0)
+        $('#pageNew').addClass('disabled')
+      else
+        $('#pageNew').removeClass('disabled')
+
+      if (((currentPage + 1) * recordsPerPage) >= totalRecords)
+        $('#pageOld').addClass('disabled')
+      else
+        $('#pageOld').removeClass('disabled')
+    }
+
+    function validateMessage(message) {
+      message = message.trim();
+      if (message !== null && message !== '')
+        return true;
+
+      return false;
+    }
+
+  </script>
+</body>
+
+</html>
