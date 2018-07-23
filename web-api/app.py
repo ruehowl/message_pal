@@ -61,7 +61,6 @@ class Message(Resource):
 			'message' : data}
 		}, 201
 
-
 # MessageList
 # shows a list of all messages, and POST to add new data
 class MessageList(Resource):
