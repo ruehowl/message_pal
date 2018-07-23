@@ -101,6 +101,5 @@ class MessageList(Resource):
 api.add_resource(MessageList, '/api/messages')
 api.add_resource(Message, '/api/messages/<message_id>')
 
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True)
