@@ -100,4 +100,4 @@ HTTP/1.0 204 NO CONTEN
 
 http://eggpi.tk:5000/api/messages
 
-You can also test the API using a ui at http://eggpi.tk
+You can also test the API using a simple UI at http://eggpi.tk
